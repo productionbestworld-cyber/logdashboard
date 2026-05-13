@@ -2,1012 +2,569 @@
 <html lang="th">
 <head>
 <meta charset="UTF-8">
-<title>ฟอร์มบันทึกรายงานการผลิต</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>บันทึกรายงานการผลิต</title>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <style>
-  :root {
-    --primary: #1f4e78;
-    --primary-light: #d9e1f2;
-    --accent: #2e7d32;
-    --warn: #c62828;
-    --bg: #f4f6fa;
-    --border: #cbd5e1;
-    --text: #1f2937;
-    --muted: #64748b;
-  }
-  * { box-sizing: border-box; }
-  body {
-    margin: 0;
-    font-family: "Sarabun", "Segoe UI", "Tahoma", sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    font-size: 15px;
-  }
-  header {
-    background: var(--primary);
-    color: white;
-    padding: 16px 24px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-    position: sticky;
-    top: 0;
-    z-index: 10;
-  }
-  header h1 { margin: 0; font-size: 20px; font-weight: 600; }
-  header .meta { font-size: 13px; opacity: 0.85; }
-  main {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 20px;
-  }
-  .card {
-    background: white;
-    border-radius: 10px;
-    padding: 20px 24px;
-    margin-bottom: 18px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-  }
-  .card h2 {
-    margin: 0 0 14px;
-    font-size: 16px;
-    color: var(--primary);
-    border-bottom: 2px solid var(--primary-light);
-    padding-bottom: 8px;
-  }
-  .card .hint {
-    font-size: 13px;
-    color: var(--muted);
-    margin: -6px 0 12px;
-  }
-  .grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-    gap: 14px;
-  }
-  .field { display: flex; flex-direction: column; }
-  .field label {
-    font-size: 13px;
-    font-weight: 600;
-    margin-bottom: 4px;
-    color: var(--text);
-  }
-  .field label .req { color: var(--warn); margin-left: 2px; }
-  .field label .opt { color: var(--muted); font-weight: 400; font-size: 12px; }
-  .field input,
-  .field select,
-  .field textarea {
-    font: inherit;
-    padding: 8px 10px;
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    background: white;
-    width: 100%;
-  }
-  .field input:focus,
-  .field select:focus,
-  .field textarea:focus {
-    outline: none;
-    border-color: var(--primary);
-    box-shadow: 0 0 0 2px rgba(31, 78, 120, 0.15);
-  }
-  .field textarea { min-height: 60px; resize: vertical; }
-  .field input.invalid { border-color: var(--warn); background: #fff5f5; }
-  .toolbar {
-    display: flex;
-    gap: 10px;
-    flex-wrap: wrap;
-    margin-top: 10px;
-    padding-top: 14px;
-    border-top: 1px dashed var(--border);
-  }
-  button {
-    font: inherit;
-    cursor: pointer;
-    padding: 10px 18px;
-    border-radius: 6px;
-    border: none;
-    font-weight: 600;
-    font-size: 14px;
-    transition: transform 0.05s, box-shadow 0.1s;
-  }
-  button:active { transform: translateY(1px); }
-  .btn-primary { background: var(--primary); color: white; }
-  .btn-primary:hover { background: #163a5c; }
-  .btn-accent { background: var(--accent); color: white; }
-  .btn-accent:hover { background: #1b5e20; }
-  .btn-ghost { background: white; border: 1px solid var(--border); color: var(--text); }
-  .btn-ghost:hover { background: #f1f5f9; }
-  .btn-danger { background: var(--warn); color: white; }
-  .btn-danger:hover { background: #8e0000; }
-  .row-type {
-    display: flex;
-    gap: 8px;
-    margin-bottom: 14px;
-    flex-wrap: wrap;
-  }
-  .row-type label {
-    cursor: pointer;
-    padding: 8px 14px;
-    border: 2px solid var(--border);
-    border-radius: 20px;
-    font-size: 13px;
-    font-weight: 600;
-    transition: all 0.15s;
-    background: white;
-  }
-  .row-type input { display: none; }
-  .row-type input:checked + span {
-    color: var(--primary);
-  }
-  .row-type label:has(input:checked) {
-    border-color: var(--primary);
-    background: var(--primary-light);
-    color: var(--primary);
-  }
-  .pending-list {
-    margin-top: 14px;
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    overflow: hidden;
-  }
-  .pending-list table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 13px;
-  }
-  .pending-list th {
-    background: var(--primary-light);
-    text-align: left;
-    padding: 8px 10px;
-    font-weight: 600;
-    color: var(--primary);
-  }
-  .pending-list td {
-    padding: 8px 10px;
-    border-top: 1px solid #eef2f7;
-  }
-  .pending-list tr:hover td { background: #f8fafc; }
-  .pending-list .empty {
-    text-align: center;
-    padding: 20px;
-    color: var(--muted);
-  }
-  .badge {
-    display: inline-block;
-    padding: 2px 8px;
-    border-radius: 10px;
-    font-size: 11px;
-    font-weight: 700;
-  }
-  .badge-prod { background: #e3f2fd; color: #1565c0; }
-  .badge-defect { background: #fff3e0; color: #e65100; }
-  .badge-down { background: #ffebee; color: #c62828; }
-  .summary {
-    background: var(--primary-light);
-    padding: 10px 14px;
-    border-radius: 6px;
-    font-size: 13px;
-    color: var(--primary);
-    margin-top: 12px;
-  }
-  .footer-action {
-    position: sticky;
-    bottom: 0;
-    background: white;
-    border-top: 2px solid var(--primary);
-    padding: 12px 24px;
-    display: flex;
-    gap: 10px;
-    justify-content: space-between;
-    box-shadow: 0 -2px 8px rgba(0,0,0,0.05);
-    flex-wrap: wrap;
-  }
-  .footer-action .left { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
-  .footer-action .right { display: flex; gap: 10px; flex-wrap: wrap; }
-  .conditional { display: none; }
-  .conditional.active { display: block; }
-  .modal-backdrop {
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.4);
-    z-index: 100;
-    justify-content: center;
-    align-items: center;
-  }
-  .modal-backdrop.show { display: flex; }
-  .modal {
-    background: white;
-    padding: 22px 26px;
-    border-radius: 10px;
-    max-width: 90%;
-    max-height: 80vh;
-    overflow: auto;
-    width: 480px;
-  }
-  .modal h3 { margin-top: 0; color: var(--primary); }
-  .modal pre {
-    background: #f8fafc;
-    padding: 10px;
-    border-radius: 6px;
-    overflow: auto;
-    font-size: 12px;
-    border: 1px solid var(--border);
-    max-height: 300px;
-  }
-  .toast {
-    position: fixed;
-    top: 80px;
-    right: 24px;
-    background: var(--accent);
-    color: white;
-    padding: 12px 18px;
-    border-radius: 6px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-    opacity: 0;
-    transform: translateY(-10px);
-    transition: all 0.25s;
-    pointer-events: none;
-    z-index: 200;
-  }
-  .toast.show { opacity: 1; transform: translateY(0); }
-  .toast.error { background: var(--warn); }
-  @media print { .footer-action, button { display: none; } }
+*{box-sizing:border-box;margin:0;padding:0;font-family:"Sarabun",sans-serif;}
+body{background:#f0f4f8;color:#1a202c;font-size:15px;}
+.topbar{background:#1f4e78;color:white;padding:14px 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,0.15);}
+.topbar-title{font-size:18px;font-weight:700;}
+.topbar-sub{font-size:12px;opacity:0.8;margin-top:2px;}
+.cloud-badge{font-size:12px;background:rgba(255,255,255,0.15);padding:4px 10px;border-radius:20px;}
+.main{max-width:900px;margin:0 auto;padding:20px 16px 100px;}
+.card{background:white;border-radius:12px;box-shadow:0 1px 3px rgba(0,0,0,0.07);padding:20px;margin-bottom:16px;}
+.card-title{font-size:15px;font-weight:700;color:#1f4e78;margin-bottom:16px;display:flex;align-items:center;gap:8px;border-bottom:2px solid #dbeafe;padding-bottom:10px;}
+.profile-box{background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:14px 16px;margin-bottom:14px;}
+.profile-box-header{font-size:12px;font-weight:600;color:#1d4ed8;margin-bottom:8px;display:flex;align-items:center;}
+.profile-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
+.profile-item .lbl{color:#64748b;font-size:11px;}
+.profile-item .val{font-weight:600;color:#1e293b;font-size:13px;}
+.btn-edit-profile{font-size:12px;color:#1d4ed8;cursor:pointer;border:none;background:none;padding:0;text-decoration:underline;margin-left:auto;}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;}
+.grid-4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px;}
+.field{display:flex;flex-direction:column;gap:4px;}
+.field label{font-size:13px;font-weight:600;color:#374151;}
+.req{color:#dc2626;margin-left:2px;}
+.opt{color:#94a3b8;font-weight:400;font-size:11px;margin-left:4px;}
+.field input,.field select,.field textarea{border:1px solid #e2e8f0;border-radius:7px;padding:9px 11px;font-family:Sarabun;font-size:14px;color:#1a202c;outline:none;width:100%;background:white;}
+.field input:focus,.field select:focus{border-color:#1f4e78;box-shadow:0 0 0 2px rgba(31,78,120,0.1);}
+.field input.err,.field select.err{border-color:#dc2626;background:#fff5f5;}
+.field textarea{min-height:56px;resize:vertical;}
+.kpi-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px;}
+.kpi-mini{background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:10px 12px;text-align:center;}
+.kpi-mini .kval{font-size:22px;font-weight:700;color:#1f4e78;}
+.kpi-mini .klab{font-size:11px;color:#94a3b8;margin-top:2px;}
+.toggle-btn{background:none;border:none;color:#1d4ed8;font-family:Sarabun;font-size:13px;cursor:pointer;padding:0;display:flex;align-items:center;gap:4px;margin-top:10px;}
+.extra-fields{display:none;margin-top:12px;}
+.extra-fields.open{display:block;}
+.type-pills{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;}
+.type-pill{padding:9px 18px;border:2px solid #e2e8f0;border-radius:20px;font-size:13px;font-weight:600;cursor:pointer;background:white;color:#64748b;transition:all .15s;}
+.type-pill.ap{border-color:#1f4e78;background:#dbeafe;color:#1f4e78;}
+.type-pill.ad{border-color:#ea580c;background:#ffedd5;color:#ea580c;}
+.type-pill.aw{border-color:#dc2626;background:#fee2e2;color:#dc2626;}
+.sum-bar{background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:8px 14px;font-size:13px;color:#1d4ed8;margin-top:10px;display:flex;gap:20px;flex-wrap:wrap;}
+.btn{border:none;border-radius:8px;padding:11px 20px;font-family:Sarabun;font-size:14px;font-weight:600;cursor:pointer;transition:all .15s;display:inline-flex;align-items:center;gap:6px;}
+.btn:active{transform:translateY(1px);}
+.btn-primary{background:#1f4e78;color:white;}.btn-primary:hover{background:#163a5c;}
+.btn-green{background:#16a34a;color:white;}.btn-green:hover{background:#15803d;}
+.btn-ghost{background:white;border:1px solid #e2e8f0;color:#374151;}.btn-ghost:hover{background:#f8fafc;}
+.btn-danger{background:#dc2626;color:white;}.btn-danger:hover{background:#b91c1c;}
+.btn-orange{background:#ea580c;color:white;}.btn-orange:hover{background:#c2410c;}
+.btn-sm{padding:7px 14px;font-size:13px;}
+.tbl-wrap{overflow-x:auto;border:1px solid #e2e8f0;border-radius:8px;}
+table{width:100%;border-collapse:collapse;font-size:13px;}
+thead th{background:#f1f5f9;padding:9px 10px;text-align:left;font-weight:600;color:#374151;white-space:nowrap;}
+tbody td{padding:8px 10px;border-top:1px solid #f1f5f9;}
+tbody tr:hover td{background:#fafbfc;}
+.badge{display:inline-block;padding:2px 8px;border-radius:9999px;font-size:11px;font-weight:700;}
+.b-prod{background:#dbeafe;color:#1d4ed8;}
+.b-defect{background:#ffedd5;color:#ea580c;}
+.b-down{background:#fee2e2;color:#dc2626;}
+.b-sync{background:#dcfce7;color:#16a34a;}
+.b-local{background:#fef9c3;color:#a16207;}
+.footer{position:fixed;bottom:0;left:0;right:0;background:white;border-top:2px solid #1f4e78;padding:10px 20px;display:flex;justify-content:space-between;align-items:center;box-shadow:0 -2px 8px rgba(0,0,0,0.06);z-index:50;flex-wrap:wrap;gap:8px;}
+.footer-left{display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+.footer-right{display:flex;gap:8px;flex-wrap:wrap;}
+.toast{position:fixed;top:70px;right:20px;padding:12px 18px;border-radius:8px;font-size:14px;color:white;z-index:200;opacity:0;transform:translateY(-8px);transition:all .2s;pointer-events:none;max-width:320px;}
+.toast.show{opacity:1;transform:translateY(0);}
+.tok{background:#16a34a;}.terr{background:#dc2626;}.tinfo{background:#1f4e78;}
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:150;align-items:center;justify-content:center;}
+.overlay.show{display:flex;}
+.modal{background:white;border-radius:12px;padding:24px;width:480px;max-width:95vw;max-height:85vh;overflow:auto;}
+.modal h3{font-size:16px;font-weight:700;color:#1f4e78;margin-bottom:14px;}
+@media(max-width:600px){
+  .grid-3,.grid-4{grid-template-columns:1fr 1fr;}
+  .profile-grid{grid-template-columns:1fr 1fr;}
+}
 </style>
 </head>
 <body>
 
-<header>
+<div class="topbar">
   <div>
-    <h1>📋 ฟอร์มบันทึกรายงานการผลิต</h1>
-    <div class="meta">บันทึกข้อมูลรายเหตุการณ์ → Export CSV → ส่งเข้าไฟล์รวม</div>
+    <div class="topbar-title">📋 บันทึกรายงานการผลิต</div>
+    <div class="topbar-sub" id="topSub">กรุณาตั้งค่าใบสั่งผลิตก่อน</div>
   </div>
-  <div class="meta">
-    <span id="cloudStatus" style="margin-right:14px;"></span>
-    บันทึกค้าง: <strong id="pendingCount">0</strong> แถว
-  </div>
-</header>
+  <div class="cloud-badge" id="cloudBadge">☁️ เชื่อมต่อ Supabase</div>
+</div>
 
-<main>
+<div class="main">
 
-  <!-- Row type selector -->
-  <div class="card">
-    <h2>ประเภทรายการ</h2>
-    <div class="hint">เลือกประเภทเหตุการณ์ที่ต้องการบันทึก ระบบจะแสดงเฉพาะช่องที่จำเป็นต้องกรอก</div>
-    <div class="row-type" id="rowTypeSelect">
-      <label><input type="radio" name="rowType" value="production" checked><span>🏭 การผลิต (Production)</span></label>
-      <label><input type="radio" name="rowType" value="defect"><span>🟠 ของเสีย / รอแก้ไข</span></label>
-      <label><input type="radio" name="rowType" value="downtime"><span>🔴 Downtime / ปัญหาเครื่อง</span></label>
-    </div>
-  </div>
+  <!-- ═══ STEP 1: โปรไฟล์ใบสั่งผลิต ═══ -->
+  <div id="secProfile">
+    <div class="card">
+      <div class="card-title">🗂 ขั้นตอน 1 — โปรไฟล์ใบสั่งผลิต <span style="font-size:12px;font-weight:400;color:#64748b;">กรอกครั้งเดียวต่อ order</span></div>
 
-  <!-- Common fields -->
-  <div class="card">
-    <h2>ข้อมูลพื้นฐาน (ทุกประเภทต้องกรอก)</h2>
-    <div class="grid">
-      <div class="field">
-        <label>วันที่ผลิต<span class="req">*</span></label>
-        <input type="date" id="prodDate">
+      <div class="grid-2" style="margin-bottom:12px;">
+        <div class="field">
+          <label>เลขที่ใบสั่งผลิต <span class="req">*</span></label>
+          <input type="text" id="p_order" placeholder="เช่น 69/04/123">
+        </div>
+        <div class="field">
+          <label>เลขที่ใบสั่งขาย</label>
+          <input type="text" id="p_so" placeholder="เช่น SO6903079">
+        </div>
+        <div class="field">
+          <label>รหัสสินค้า</label>
+          <input type="text" id="p_code" placeholder="เช่น 01FXX-TCF005">
+        </div>
+        <div class="field">
+          <label>ขนาด</label>
+          <input type="text" id="p_size" placeholder="เช่น 54 cm x 45 mc">
+        </div>
+        <div class="field">
+          <label>ลูกค้า</label>
+          <input list="custList" id="p_customer" placeholder="เลือกหรือพิมพ์">
+          <datalist id="custList">
+            <option>COK</option><option>TCF</option><option>THY</option><option>HAD</option>
+            <option>GP</option><option>ICW</option><option>TST</option><option>SEX</option>
+            <option>TNT</option><option>BBP</option><option>GW</option><option>SOV</option>
+            <option>NP</option><option>DBP</option><option>SSX</option><option>TPI</option>
+          </datalist>
+        </div>
+        <div class="field">
+          <label>จำนวนสั่งผลิต (kg) <span class="opt">รวมทั้ง order</span></label>
+          <input type="number" step="0.01" id="p_planned_kg" placeholder="เช่น 4800">
+        </div>
       </div>
-      <div class="field">
-        <label>กะ<span class="req">*</span></label>
-        <select id="shift">
-          <option value="">— เลือก —</option>
-          <option value="เช้า">เช้า</option>
-          <option value="ดึก">ดึก</option>
-        </select>
+
+      <button class="toggle-btn" onclick="toggleExtra()">
+        <span id="extraIcon">▶</span>&nbsp;ข้อมูลเพิ่มเติม (วันที่, ม้วน)
+      </button>
+      <div class="extra-fields" id="extraFields">
+        <div class="grid-3" style="margin-top:12px;">
+          <div class="field"><label>วันที่สั่งผลิต</label><input type="date" id="p_order_date"></div>
+          <div class="field"><label>วันที่ส่งสินค้า</label><input type="date" id="p_ship_date"></div>
+          <div class="field"><label>จำนวนสั่งผลิต (ม้วน)</label><input type="number" step="1" id="p_planned_rolls"></div>
+        </div>
       </div>
-      <div class="field">
-        <label>เครื่องจักร<span class="req">*</span></label>
-        <select id="machine">
-          <option value="">— เลือก —</option>
-          <option>BL01</option><option>BL02</option><option>BL03</option><option>BL04</option>
-          <option>BL05</option><option>BL06</option><option>BL07</option><option>BL08</option>
-          <option>BL09</option><option>BL10</option><option>BL11</option>
-        </select>
-      </div>
-      <div class="field">
-        <label>หัวหน้ากะ<span class="req">*</span></label>
-        <select id="supervisor">
-          <option value="">— เลือก —</option>
-          <option>วิชาญ</option>
-          <option>รพัภัทร์</option>
-          <option>รพีพัทธ์</option>
-        </select>
-      </div>
-      <div class="field">
-        <label>ผู้บันทึก<span class="req">*</span></label>
-        <select id="recorder">
-          <option value="">— เลือก —</option>
-          <option>อธิบดี</option>
-          <option>อภิรักษ์</option>
-        </select>
-      </div>
-      <div class="field">
-        <label>เลขที่ใบสั่งผลิต<span class="req">*</span></label>
-        <input type="text" id="prodOrder" placeholder="เช่น 69/04/123">
-      </div>
-      <div class="field">
-        <label>เลขที่ใบสั่งขาย</label>
-        <input type="text" id="soNo" placeholder="เช่น SO6903079">
-      </div>
-      <div class="field">
-        <label>รหัสสินค้า</label>
-        <input type="text" id="productCode" placeholder="เช่น 01FXX-TCF005">
-      </div>
-      <div class="field">
-        <label>ขนาด</label>
-        <input type="text" id="size" placeholder="เช่น 54 cm x 45 mc">
-      </div>
-      <div class="field">
-        <label>ลูกค้า</label>
-        <input list="customerList" id="customer" placeholder="พิมพ์หรือเลือก">
-        <datalist id="customerList">
-          <option>COK</option><option>TCF</option><option>THY</option><option>HAD</option>
-          <option>GP</option><option>ICW</option><option>TST</option><option>SEX</option>
-          <option>TNT</option><option>BBP</option><option>GW</option><option>DBP</option>
-          <option>SSX</option><option>SOV</option><option>TPI</option>
-        </datalist>
-      </div>
-      <div class="field">
-        <label>วันที่สั่งผลิต <span class="opt">(เฉพาะแถวแรกใบสั่ง)</span></label>
-        <input type="date" id="orderDate">
-      </div>
-      <div class="field">
-        <label>วันที่ส่งสินค้า <span class="opt">(เฉพาะแถวแรกใบสั่ง)</span></label>
-        <input type="date" id="shipDate">
+
+      <div style="margin-top:16px;display:flex;gap:10px;flex-wrap:wrap;">
+        <button class="btn btn-primary" onclick="saveProfile()">✅ ยืนยัน → เริ่มบันทึกต่อกะ</button>
+        <button class="btn btn-ghost btn-sm" onclick="loadLastProfile()">↩ ใช้ order ล่าสุด</button>
       </div>
     </div>
   </div>
 
-  <!-- Production fields -->
-  <div class="card conditional active" id="sectionProduction">
-    <h2>🏭 ข้อมูลการผลิต</h2>
-    <div class="grid">
-      <div class="field">
-        <label>เวลาเริ่ม<span class="req">*</span></label>
-        <input type="time" id="startTime">
+  <!-- ═══ STEP 2: บันทึกต่อกะ ═══ -->
+  <div id="secLog" style="display:none;">
+
+    <!-- Profile summary -->
+    <div class="profile-box">
+      <div class="profile-box-header">
+        🗂 ใบสั่งผลิต
+        <button class="btn-edit-profile" onclick="editProfile()">✏️ เปลี่ยน order</button>
       </div>
-      <div class="field">
-        <label>เวลาจบ<span class="req">*</span></label>
-        <input type="time" id="endTime">
+      <div class="profile-grid" id="profileDisplay"></div>
+    </div>
+
+    <!-- KPI -->
+    <div class="kpi-row">
+      <div class="kpi-mini"><div class="kval" id="kFG">0</div><div class="klab">FG รวม (kg)</div></div>
+      <div class="kpi-mini"><div class="kval" id="kScrap" style="color:#dc2626;">0</div><div class="klab">ของเสีย (kg)</div></div>
+      <div class="kpi-mini"><div class="kval" id="kRework" style="color:#ea580c;">0</div><div class="klab">ซ่อม (kg)</div></div>
+    </div>
+
+    <!-- Form per shift -->
+    <div class="card">
+      <div class="card-title">⚡ ขั้นตอน 2 — บันทึกต่อกะ</div>
+
+      <!-- Type pills -->
+      <div class="type-pills">
+        <div class="type-pill ap" data-t="production" onclick="setType('production')">🏭 การผลิต</div>
+        <div class="type-pill" data-t="defect" onclick="setType('defect')">🟠 ของเสีย / ซ่อม</div>
+        <div class="type-pill" data-t="downtime" onclick="setType('downtime')">🔴 Downtime</div>
       </div>
-      <div class="field">
-        <label>จำนวนที่สั่งผลิต (kg) <span class="opt">แถวแรก</span></label>
-        <input type="number" step="0.01" id="orderKg">
+
+      <!-- Common -->
+      <div class="grid-4">
+        <div class="field"><label>วันที่ผลิต <span class="req">*</span></label><input type="date" id="s_date"></div>
+        <div class="field"><label>กะ <span class="req">*</span></label>
+          <select id="s_shift">
+            <option value="">— เลือก —</option>
+            <option value="เช้า">เช้า (08:00–20:00)</option>
+            <option value="ดึก">ดึก (20:00–08:00)</option>
+          </select>
+        </div>
+        <div class="field"><label>เครื่องจักร <span class="req">*</span></label>
+          <select id="s_machine">
+            <option value="">— เลือก —</option>
+            <option>BL01</option><option>BL02</option><option>BL03</option><option>BL04</option>
+            <option>BL05</option><option>BL06</option><option>BL07</option><option>BL08</option>
+            <option>BL09</option><option>BL10</option><option>BL11</option>
+          </select>
+        </div>
+        <div class="field"><label>หัวหน้ากะ <span class="req">*</span></label>
+          <select id="s_supervisor">
+            <option value="">— เลือก —</option>
+            <option>วิชาญ</option><option>รพัภัทร์</option><option>รพีพัทธ์</option>
+          </select>
+        </div>
       </div>
-      <div class="field">
-        <label>จำนวนที่สั่งผลิต (ม้วน) <span class="opt">แถวแรก</span></label>
-        <input type="number" step="1" id="orderRoll">
+
+      <!-- PRODUCTION -->
+      <div id="secProd" style="margin-top:14px;">
+        <div class="grid-4">
+          <div class="field"><label>เวลาเริ่ม <span class="req">*</span></label><input type="time" id="s_start"></div>
+          <div class="field"><label>เวลาจบ <span class="req">*</span></label><input type="time" id="s_end"></div>
+          <div class="field"><label>FG (kg) <span class="req">*</span></label><input type="number" step="0.01" id="s_fg_kg" placeholder="0.00" oninput="liveSummary()"></div>
+          <div class="field"><label>FG (ม้วน) <span class="req">*</span></label><input type="number" step="1" id="s_fg_rolls" placeholder="0"></div>
+        </div>
+        <div class="grid-4" style="margin-top:10px;">
+          <div class="field"><label>ของเสีย (kg)</label><input type="number" step="0.01" id="s_scrap" placeholder="0.00" oninput="liveSummary()"></div>
+          <div class="field"><label>ซ่อม/Rework (kg)</label><input type="number" step="0.01" id="s_rework" placeholder="0.00" oninput="liveSummary()"></div>
+          <div class="field"><label>ยอดคงเหลือ (kg)</label><input type="number" step="0.01" id="s_wip" placeholder="0.00"></div>
+          <div class="field"><label>ซ่อม (ม้วน)</label><input type="number" step="1" id="s_rework_rolls" placeholder="0"></div>
+        </div>
+        <div class="sum-bar" id="sumBar" style="display:none;">
+          %เสีย: <b id="sPct">-</b> &nbsp;|&nbsp; %ซ่อม: <b id="rPct">-</b>
+        </div>
       </div>
-      <div class="field">
-        <label>จำนวนที่ผลิตได้ (kg)<span class="req">*</span></label>
-        <input type="number" step="0.01" id="prodKg">
+
+      <!-- DEFECT -->
+      <div id="secDefect" style="display:none;margin-top:14px;">
+        <div class="grid-4">
+          <div class="field"><label>อาการ</label>
+            <input list="symList" id="s_symptom" placeholder="เช่น โป่งแตก">
+            <datalist id="symList">
+              <option>โป่งแตก</option><option>โป่งรั่ว</option><option>โป่งลอย</option>
+              <option>ยับ</option><option>ไหล</option><option>หัวโต</option>
+              <option>หน้าม้วนไม่เรียบ</option><option>หลุดมีด</option><option>แกนโผล่</option>
+              <option>เม็ดหมด</option><option>ม้วนดำ</option><option>นน.น้อย</option>
+            </datalist>
+          </div>
+          <div class="field"><label>สาเหตุ</label>
+            <input list="cauList" id="s_cause" placeholder="เช่น เม็ดไหม้">
+            <datalist id="cauList">
+              <option>เม็ดไหม้</option><option>เม็ดก้อน</option><option>ไหล</option>
+              <option>ยับ</option><option>หัวโต</option><option>หลุดมีด</option>
+              <option>แมลง</option><option>รับกะแดง ยับ</option><option>รับกะแดง ไหล</option>
+              <option>รับกะแดง หัวโต</option><option>เดินเม็ดหมด</option>
+            </datalist>
+          </div>
+          <div class="field"><label>น้ำหนักเสีย (kg)</label><input type="number" step="0.01" id="s_waste" placeholder="0.00"></div>
+          <div class="field"><label>ซ่อม (kg)</label><input type="number" step="0.01" id="s_rework2" placeholder="0.00"></div>
+        </div>
       </div>
-      <div class="field">
-        <label>จำนวนที่ผลิตได้ (ม้วน)<span class="req">*</span></label>
-        <input type="number" step="1" id="prodRoll">
+
+      <!-- DOWNTIME -->
+      <div id="secDown" style="display:none;margin-top:14px;">
+        <div class="grid-4">
+          <div class="field"><label>เวลาหยุด <span class="req">*</span></label><input type="time" id="s_lstart" oninput="calcDown()"></div>
+          <div class="field"><label>เวลากลับ <span class="req">*</span></label><input type="time" id="s_lend" oninput="calcDown()"></div>
+          <div class="field" style="grid-column:span 2;"><label>ปัญหา / สาเหตุ</label><input type="text" id="s_problem" placeholder="เช่น มอเตอร์เสีย, เปลี่ยนงาน"></div>
+        </div>
+        <div id="downSum" style="margin-top:8px;font-size:13px;color:#dc2626;font-weight:500;"></div>
       </div>
-      <div class="field">
-        <label>เลขที่ม้วน A</label>
-        <input type="text" id="rollA" placeholder="เช่น 15,16,19,20">
+
+      <!-- Extra common -->
+      <div class="grid-2" style="margin-top:14px;">
+        <div class="field"><label>ผู้บันทึก</label>
+          <select id="s_recorder"><option value="">— เลือก —</option><option>อธิบดี</option><option>อภิรักษ์</option></select>
+        </div>
+        <div class="field"><label>หมายเหตุ <span class="opt">(ถ้ามี)</span></label><input type="text" id="s_note" placeholder="หมายเหตุ..."></div>
       </div>
-      <div class="field">
-        <label>เลขที่ม้วน B</label>
-        <input type="text" id="rollB" placeholder="เช่น 11,12,13,14">
-      </div>
-      <div class="field">
-        <label>ยอดผลิตคงเหลือ (kg)</label>
-        <input type="number" step="0.01" id="remainKg">
-      </div>
-      <div class="field">
-        <label>ยอดผลิตคงเหลือ (ม้วน)</label>
-        <input type="number" step="1" id="remainRoll">
+
+      <div style="margin-top:16px;display:flex;gap:10px;flex-wrap:wrap;">
+        <button class="btn btn-green" onclick="addRow()">➕ บันทึกกะนี้</button>
+        <button class="btn btn-ghost btn-sm" onclick="useLast()">↩ ค่าเหมือนกะล่าสุด</button>
+        <button class="btn btn-ghost btn-sm" onclick="clearShift()">🧹 ล้าง</button>
       </div>
     </div>
-    <div class="summary" id="prodSummary">% ของเสีย: รอกรอกข้อมูล</div>
-  </div>
 
-  <!-- Defect / Rework fields -->
-  <div class="card conditional" id="sectionDefect">
-    <h2>🟠 ของเสีย / ม้วนรอแก้ไข</h2>
-    <div class="grid">
-      <div class="field">
-        <label>กลุ่มของเสีย</label>
-        <select id="defectGroup">
-          <option value="">— เลือก —</option>
-          <option>G1</option><option>G2</option><option>G3</option><option>G4</option>
-          <option>G6</option><option>G8</option>
-        </select>
+    <!-- Pending table -->
+    <div class="card">
+      <div class="card-title">📑 รายการที่บันทึกแล้ว <span style="font-size:13px;font-weight:400;color:#64748b;" id="rowLbl"></span></div>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr>
+            <th>#</th><th>ประเภท</th><th>วันที่</th><th>กะ</th><th>เครื่อง</th>
+            <th>FG (kg)</th><th>เสีย</th><th>ซ่อม</th><th>อาการ/ปัญหา</th><th></th>
+          </tr></thead>
+          <tbody id="pendingBody">
+            <tr><td colspan="10" style="text-align:center;color:#94a3b8;padding:20px;">ยังไม่มีรายการ</td></tr>
+          </tbody>
+        </table>
       </div>
-      <div class="field">
-        <label>น้ำหนักเศษของเสีย (kg)</label>
-        <input type="number" step="0.01" id="wasteKg">
-      </div>
-      <div class="field">
-        <label>น้ำหนักเศษก้อน (kg)</label>
-        <input type="number" step="0.01" id="lumpKg">
-      </div>
-      <div class="field">
-        <label>น้ำหนักม้วนรอแก้ไข (kg)</label>
-        <input type="number" step="0.01" id="reworkKg">
-      </div>
-      <div class="field">
-        <label>จำนวนม้วนรอแก้ไข (ม้วน)</label>
-        <input type="number" step="1" id="reworkRoll">
-      </div>
-      <div class="field">
-        <label>อาการของปัญหา</label>
-        <input list="symptomList" id="symptom" placeholder="เช่น โป่งแตก, ยับ">
-        <datalist id="symptomList">
-          <option>โป่งแตก</option><option>โป่งรั่ว</option><option>ไหล</option>
-          <option>ยับ</option><option>หัวโต</option><option>แกนโผล่</option>
-          <option>หน้าม้วนไม่เรียบ</option><option>ไม่เรียบ</option><option>นน.น้อย</option>
-          <option>หลุดมีด</option><option>ไหลรับกะบาย</option><option>ยับรับกะบาย</option>
-        </datalist>
-      </div>
-      <div class="field">
-        <label>สาเหตุ</label>
-        <input list="causeList" id="cause" placeholder="เช่น เม็ดไหม้">
-        <datalist id="causeList">
-          <option>เม็ดไหม้</option><option>เม็ดก้อน</option><option>ไหล</option>
-          <option>ไม่เรียบ</option><option>ยับ</option><option>หัวโต</option>
-          <option>แมลง</option><option>เดินเม็ดหมด</option><option>หลุดมีด</option>
-          <option>แกนโผล่</option><option>รับกะแดง หัวโต</option><option>รับกะแดง ยับ</option>
-          <option>รับกะแดง ไม่เรียบ</option><option>รับกะแดง ไฟดับ</option>
-        </datalist>
-      </div>
-    </div>
-  </div>
-
-  <!-- Downtime fields -->
-  <div class="card conditional" id="sectionDowntime">
-    <h2>🔴 Downtime / ปัญหาเครื่องจักร</h2>
-    <div class="grid">
-      <div class="field">
-        <label>เวลาที่เริ่มสูญเสีย<span class="req">*</span></label>
-        <input type="time" id="lossStart">
-      </div>
-      <div class="field">
-        <label>เวลาที่จบการสูญเสีย<span class="req">*</span></label>
-        <input type="time" id="lossEnd">
-      </div>
-      <div class="field" style="grid-column: span 2;">
-        <label>ระบุปัญหาเครื่องจักร</label>
-        <input type="text" id="machProblem" placeholder="เช่น มอเตอร์เสีย, สายพานหลุด">
-      </div>
-      <div class="field">
-        <label>อาการของปัญหา</label>
-        <input list="symptomList" id="symptom2" placeholder="เช่น เปลี่ยนงาน, เปลี่ยนตะแกรง">
-      </div>
-      <div class="field">
-        <label>สาเหตุ</label>
-        <input list="causeList" id="cause2" placeholder="เช่น ไฟดับ">
-      </div>
-      <div class="field" style="grid-column: span 2;">
-        <label>การดำเนินการ</label>
-        <textarea id="action" placeholder="เช่น เปลี่ยนงาน, แก้ไขเรียบร้อย"></textarea>
-      </div>
-    </div>
-    <div class="summary" id="downSummary">ระยะเวลา Downtime: รอกรอกข้อมูล</div>
-  </div>
-
-  <!-- Action toolbar -->
-  <div class="card">
-    <div class="toolbar">
-      <button class="btn-primary" onclick="addRow()">➕ เพิ่มแถวลงรายการ</button>
-      <button class="btn-ghost" onclick="clearForm()">🧹 ล้างฟอร์ม</button>
-      <button class="btn-ghost" onclick="useLast()">↩️ ใช้ค่าเหมือนแถวล่าสุด</button>
-    </div>
-  </div>
-
-  <!-- Pending list -->
-  <div class="card">
-    <h2>📑 รายการที่บันทึกในรอบนี้</h2>
-    <div class="hint">ตรวจสอบความถูกต้องก่อน Export ไปต่อท้ายไฟล์รวม</div>
-    <div class="pending-list">
-      <table id="pendingTable">
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>ประเภท</th>
-            <th>วันที่</th>
-            <th>กะ</th>
-            <th>เครื่อง</th>
-            <th>ใบสั่งผลิต</th>
-            <th>ลูกค้า</th>
-            <th>ผลิต (kg)</th>
-            <th>ของเสีย (kg)</th>
-            <th>Downtime</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody id="pendingBody">
-          <tr><td colspan="11" class="empty">ยังไม่มีรายการ</td></tr>
-        </tbody>
-      </table>
     </div>
   </div>
 
-</main>
+</div>
 
-<div class="footer-action">
-  <div class="left">
-    <strong>รวม: <span id="footerCount">0</span> แถว</strong>
-    <span style="color: var(--muted); font-size: 13px;">| ผลิตได้: <span id="footerKg">0</span> kg | ของเสีย: <span id="footerWaste">0</span> kg</span>
+<!-- Footer -->
+<div class="footer">
+  <div class="footer-left">
+    <strong id="footerCount">0 แถว</strong>
+    <span style="color:#64748b;font-size:13px;">FG: <b id="fFG">0</b> kg &nbsp;|&nbsp; เสีย: <b id="fScrap">0</b> kg</span>
   </div>
-  <div class="right">
-    <button class="btn-ghost" id="syncBtn" onclick="syncAllPending()" style="display:none;">☁️ Sync Supabase</button>
-    <button class="btn-ghost" onclick="previewCSV()">👁 ดูตัวอย่าง CSV</button>
-    <button class="btn-accent" onclick="downloadCSV()">💾 ดาวน์โหลด CSV</button>
-    <button class="btn-danger" onclick="clearAll()">🗑 ล้างทั้งหมด</button>
+  <div class="footer-right">
+    <button class="btn btn-ghost btn-sm" onclick="previewCSV()">👁 CSV</button>
+    <button class="btn btn-orange btn-sm" onclick="downloadCSV()">💾 Export</button>
+    <button class="btn btn-danger btn-sm" onclick="clearAll()">🗑 ล้างทั้งหมด</button>
   </div>
 </div>
 
-<div class="modal-backdrop" id="modal">
+<!-- CSV modal -->
+<div class="overlay" id="csvOverlay">
   <div class="modal">
-    <h3>ตัวอย่าง CSV ที่จะ Export</h3>
-    <p style="font-size: 13px; color: var(--muted);">หัวคอลัมน์ตรงกับไฟล์ต้นฉบับ ทำให้ Append ต่อท้ายได้ทันที</p>
-    <pre id="csvPreview"></pre>
-    <div style="display:flex; gap: 10px; justify-content: flex-end; margin-top: 14px;">
-      <button class="btn-ghost" onclick="closeModal()">ปิด</button>
-      <button class="btn-accent" onclick="downloadCSV()">💾 ดาวน์โหลด</button>
+    <h3>ตัวอย่าง CSV</h3>
+    <pre id="csvPre" style="background:#f8fafc;padding:10px;border-radius:6px;font-size:11px;overflow:auto;max-height:300px;border:1px solid #e2e8f0;"></pre>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px;">
+      <button class="btn btn-ghost btn-sm" onclick="closeCSV()">ปิด</button>
+      <button class="btn btn-orange btn-sm" onclick="downloadCSV()">💾 ดาวน์โหลด</button>
     </div>
   </div>
 </div>
 
 <div class="toast" id="toast"></div>
 
-<!-- Supabase client (loaded lazily; only used if SUPABASE_URL is set) -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-// ============================================================
-// SUPABASE CONFIG — กรอก URL+ANON_KEY แล้วฟอร์มจะส่งข้อมูลขึ้น Supabase
-// ปล่อยว่างถ้าจะใช้แบบ CSV download อย่างเดียว
-// ============================================================
-const SUPABASE_URL  = "https://ecsvgwhzfbhlbcnpcpzl.supabase.co";
-const SUPABASE_KEY  = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVjc3Znd2h6ZmJobGJjbnBjcHpsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc4NTk5MDAsImV4cCI6MjA5MzQzNTkwMH0.OGQgd5H7M3-yq7iqw0I-0oULAt02qcdBx4AL_hN_rzE";
+const SB_URL='https://ecsvgwhzfbhlbcnpcpzl.supabase.co';
+const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVjc3Znd2h6ZmJobGJjbnBjcHpsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc4NTk5MDAsImV4cCI6MjA5MzQzNTkwMH0.OGQgd5H7M3-yq7iqw0I-0oULAt02qcdBx4AL_hN_rzE';
+const sb=supabase.createClient(SB_URL,SB_KEY);
 
-let supa = null;
-let currentUser = null;
-const useSupabase = !!(SUPABASE_URL && SUPABASE_KEY && window.supabase);
-if (useSupabase) {
-  supa = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+let profile=null,pending=[],lastShift=null,curType='production';
+
+function g(id){return document.getElementById(id);}
+function v(id){const e=g(id);return e?(e.value||'').trim():'';}
+function n(id){return parseFloat(v(id))||0;}
+function fmt(x){return(x||0).toLocaleString('th-TH',{maximumFractionDigits:2});}
+
+let tt;
+function toast(msg,cls='tok'){
+  const el=g('toast');el.textContent=msg;el.className='toast show '+cls;
+  clearTimeout(tt);tt=setTimeout(()=>el.className='toast',3000);
 }
 
-// Map ฟิลด์จากฟอร์ม -> คอลัมน์ในตาราง production_log
-function toSupabaseRow(row) {
-  const tISO = t => t && /^\d{2}:\d{2}$/.test(t) ? t + ":00" : (t || null);
-  const dISO = d => {
-    if (!d) return null;
-    const m = d.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
-    if (!m) return null;
-    return `${m[3]}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`;
-  };
-  const num = v => (v === '' || v == null) ? null : Number(v);
-  return {
-    row_type:             row._type,
-    production_date:      dISO(row['วันที่ผลิต']),
-    start_time:           tISO(row['เวลาเริ่ม']),
-    end_time:             tISO(row['เวลาจบ']),
-    production_order_no:  row['เลขที่ใบสั่งผลิต'] || null,
-    sales_order_no:       row['เลขที่ใบสั่งขาย'] || null,
-    machine:              row['เครื่องจักร'] || null,
-    order_date:           dISO(row['วันที่สั่งผลิต']),
-    ship_date:            dISO(row['วันที่ส่งสินค้า']),
-    product_code:         row['รหัสสินค้า'] || null,
-    product_size:         row['ขนาด'] || null,
-    customer:             row['ลูกค้า'] || null,
-    defect_group:         row['กลุ่มของเสีย'] || null,
-    ordered_qty_kg:       num(row['จำนวนที่สั่งผลิต (kg)']),
-    ordered_qty_rolls:    num(row['จำนวนที่สั่งผลิต (ม้วน)']),
-    produced_qty_kg:      num(row['จำนวนที่ผลิตได้ (kg)']),
-    produced_qty_rolls:   num(row['จำนวนที่ผลิตได้ (ม้วน)']),
-    roll_no_a:            row['เลขที่ม้วน A'] || null,
-    roll_no_b:            row['เลขที่ม้วน B'] || null,
-    remaining_qty_kg:     num(row['ยอดผลิตคงเหลือ (kg)']),
-    remaining_qty_rolls:  num(row['ยอดผลิตคงเหลือ (ม้วน)']),
-    waste_kg:             num(row['น้ำหนักเศษของเสีย (kg)']),
-    lump_kg:              num(row['น้ำหนักเศษก้อน (kg)']),
-    loss_start_time:      tISO(row['เวลาที่เริ่มสูญเสีย']),
-    loss_end_time:        tISO(row['เวลาที่จบการสูญเสีย']),
-    shift:                row['กะ'] || null,
-    supervisor:           row['หัวหน้ากะ'] || null,
-    recorder:             row['ผู้บันทึก'] || null,
-    machine_problem:      row['ระบุปัญหาเครื่องจักร'] || null,
-    problem_symptom:      row['อาการของปัญหา'] || null,
-    problem_cause:        row['สาเหตุ'] || null,
-    action_taken:         row['การดำเนินการ'] || null,
-    rework_kg:            num(row['น้ำหนักม้วนรอแก้ไข (kg)']),
-    rework_rolls:         num(row['จำนวนม้วนรอแก้ไข (ม้วน)']),
-    group_number:         num(row['Groupe Number']),
-    created_by:           currentUser ? currentUser.id : null
-  };
+// ── Profile ──────────────────────────────────────────────────────────────────
+function toggleExtra(){
+  const el=g('extraFields');el.classList.toggle('open');
+  g('extraIcon').textContent=el.classList.contains('open')?'▼':'▶';
 }
 
-async function ensureLogin() {
-  if (!useSupabase) return true;
-  const { data } = await supa.auth.getUser();
-  if (data && data.user) { currentUser = data.user; return true; }
-  return new Promise(resolve => showLoginModal(resolve));
+function saveProfile(){
+  const order=v('p_order');
+  if(!order){g('p_order').classList.add('err');toast('กรอกเลขที่ใบสั่งผลิต','terr');return;}
+  g('p_order').classList.remove('err');
+  profile={order_no:order,so:v('p_so'),code:v('p_code'),size:v('p_size'),
+    customer:v('p_customer'),planned_kg:v('p_planned_kg'),
+    planned_rolls:v('p_planned_rolls'),order_date:v('p_order_date'),ship_date:v('p_ship_date')};
+  try{localStorage.setItem('lastProfile',JSON.stringify(profile));}catch(e){}
+  g('topSub').textContent='Order: '+order+(profile.customer?' | '+profile.customer:'');
+  renderProfile();
+  g('secProfile').style.display='none';
+  g('secLog').style.display='block';
+  toast('ตั้งค่า order เรียบร้อย ✓');
 }
 
-function showLoginModal(resolve) {
-  const html = `
-    <div class="modal-backdrop show" id="loginModal">
-      <div class="modal">
-        <h3>เข้าสู่ระบบ</h3>
-        <p style="font-size:13px;color:#64748b;">ใช้บัญชี Supabase ที่บริษัทตั้งไว้ เพื่อบันทึกข้อมูลในชื่อของผู้กรอก</p>
-        <div class="field"><label>Email</label><input id="lgEmail" type="email"></div>
-        <div class="field"><label>Password</label><input id="lgPass" type="password"></div>
-        <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:14px;">
-          <button class="btn-ghost" onclick="document.getElementById('loginModal').remove();window._loginResolve(false);">ยกเลิก</button>
-          <button class="btn-primary" onclick="doLogin()">เข้าสู่ระบบ</button>
-        </div>
-      </div>
-    </div>`;
-  document.body.insertAdjacentHTML('beforeend', html);
-  window._loginResolve = resolve;
-}
-async function doLogin() {
-  const email = document.getElementById('lgEmail').value;
-  const pass  = document.getElementById('lgPass').value;
-  const { data, error } = await supa.auth.signInWithPassword({ email, password: pass });
-  if (error) { toToast('Login ล้มเหลว: ' + error.message, true); return; }
-  currentUser = data.user;
-  document.getElementById('loginModal').remove();
-  toToast('Login สำเร็จ: ' + email);
-  if (window._loginResolve) window._loginResolve(true);
+function renderProfile(){
+  if(!profile)return;
+  g('profileDisplay').innerHTML=`
+    <div class="profile-item"><div class="lbl">ใบสั่งผลิต</div><div class="val">${profile.order_no||'-'}</div></div>
+    <div class="profile-item"><div class="lbl">ใบสั่งขาย</div><div class="val">${profile.so||'-'}</div></div>
+    <div class="profile-item"><div class="lbl">ลูกค้า</div><div class="val">${profile.customer||'-'}</div></div>
+    <div class="profile-item"><div class="lbl">รหัสสินค้า</div><div class="val">${profile.code||'-'}</div></div>
+    <div class="profile-item"><div class="lbl">ขนาด</div><div class="val">${profile.size||'-'}</div></div>
+    <div class="profile-item"><div class="lbl">สั่งผลิต (kg)</div><div class="val">${profile.planned_kg||'-'}</div></div>`;
 }
 
-async function syncRowToSupabase(row) {
-  if (!useSupabase) return { ok: true, skipped: true };
-  if (!await ensureLogin()) return { ok: false, error: 'ยังไม่ได้ login' };
-  const payload = toSupabaseRow(row);
-  const { error } = await supa.from('production_log').insert(payload);
-  if (error) return { ok: false, error: error.message };
-  return { ok: true };
-}
-
-// ===== Original CSV column order =====
-const COLUMNS = [
-  'วันที่ผลิต','เวลาเริ่ม','เวลาจบ','เลขที่ใบสั่งผลิต','เลขที่ใบสั่งขาย','เครื่องจักร',
-  'วันที่สั่งผลิต','วันที่ส่งสินค้า','รหัสสินค้า','ขนาด','ลูกค้า','กลุ่มของเสีย',
-  'จำนวนที่สั่งผลิต (kg)','จำนวนที่สั่งผลิต (ม้วน)','จำนวนที่ผลิตได้ (kg)','จำนวนที่ผลิตได้ (ม้วน)',
-  'เลขที่ม้วน A','เลขที่ม้วน B','ยอดผลิตคงเหลือ (kg)','ยอดผลิตคงเหลือ (ม้วน)',
-  'น้ำหนักเศษของเสีย (kg)','น้ำหนักเศษก้อน (kg)','เวลาที่เริ่มสูญเสีย','เวลาที่จบการสูญเสีย',
-  'กะ','หัวหน้ากะ','ผู้บันทึก','ระบุปัญหาเครื่องจักร','อาการของปัญหา','สาเหตุ','การดำเนินการ',
-  'น้ำหนักม้วนรอแก้ไข (kg)','จำนวนม้วนรอแก้ไข (ม้วน)','Groupe Number','Column36','Column1','Column2'
-];
-
-let pending = [];   // collected rows (objects with COLUMNS keys + _type)
-let lastRow = null; // for "use last"
-
-// ===== Helpers =====
-function $(id) { return document.getElementById(id); }
-function val(id) { const e = $(id); return e ? (e.value || '').trim() : ''; }
-function toToast(msg, isError) {
-  const t = $('toast');
-  t.textContent = msg;
-  t.classList.toggle('error', !!isError);
-  t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 2200);
-}
-function fmtDateInput(d) {
-  // 2026-04-01 -> 1/4/2026 (match original format)
-  if (!d) return '';
-  const [y, m, day] = d.split('-');
-  return `${parseInt(day,10)}/${parseInt(m,10)}/${y}`;
-}
-function minutesBetween(s, e) {
-  if (!s || !e) return null;
-  const [sh, sm] = s.split(':').map(Number);
-  const [eh, em] = e.split(':').map(Number);
-  let diff = (eh*60+em) - (sh*60+sm);
-  if (diff <= 0) diff += 24*60;
-  return diff;
-}
-function setRowType(t) {
-  document.querySelectorAll('.conditional').forEach(el => el.classList.remove('active'));
-  if (t === 'production') $('sectionProduction').classList.add('active');
-  if (t === 'defect')     $('sectionDefect').classList.add('active');
-  if (t === 'downtime')   $('sectionDowntime').classList.add('active');
-}
-function currentType() {
-  return document.querySelector('input[name=rowType]:checked').value;
-}
-
-// ===== Event wiring =====
-document.querySelectorAll('input[name=rowType]').forEach(r => {
-  r.addEventListener('change', e => setRowType(e.target.value));
-});
-
-// Live summary
-function updateLiveSummary() {
-  const kg = parseFloat(val('prodKg')) || 0;
-  const w1 = parseFloat(val('wasteKg')) || 0;
-  const w2 = parseFloat(val('lumpKg')) || 0;
-  if (kg > 0) {
-    const pct = (w1 + w2) / kg * 100;
-    $('prodSummary').textContent = `% ของเสีย = (${(w1+w2).toFixed(2)} / ${kg.toFixed(2)}) = ${pct.toFixed(2)}%`;
-  } else {
-    $('prodSummary').textContent = '% ของเสีย: รอกรอกข้อมูล';
-  }
-  const m = minutesBetween(val('lossStart'), val('lossEnd'));
-  if (m !== null) {
-    $('downSummary').textContent = `ระยะเวลา Downtime: ${m} นาที (${(m/60).toFixed(2)} ชม.)`;
-  } else {
-    $('downSummary').textContent = 'ระยะเวลา Downtime: รอกรอกข้อมูล';
-  }
-}
-['prodKg','wasteKg','lumpKg','lossStart','lossEnd'].forEach(id => {
-  $(id).addEventListener('input', updateLiveSummary);
-});
-
-// Default date = today
-$('prodDate').value = new Date().toISOString().slice(0,10);
-
-// ===== Validation =====
-function validate() {
-  const t = currentType();
-  const required = ['prodDate','shift','machine','supervisor','recorder','prodOrder'];
-  if (t === 'production') required.push('startTime','endTime','prodKg','prodRoll');
-  if (t === 'downtime')   required.push('lossStart','lossEnd');
-  let firstBad = null;
-  document.querySelectorAll('.invalid').forEach(el => el.classList.remove('invalid'));
-  for (const id of required) {
-    if (!val(id)) {
-      $(id).classList.add('invalid');
-      if (!firstBad) firstBad = $(id);
-    }
-  }
-  if (firstBad) {
-    firstBad.focus();
-    toToast('กรุณากรอกช่องที่ทำเครื่องหมาย *', true);
-    return false;
-  }
-  return true;
-}
-
-// ===== Add row =====
-function addRow() {
-  if (!validate()) return;
-  const t = currentType();
-  const row = {};
-  COLUMNS.forEach(c => row[c] = '');
-  row['วันที่ผลิต']       = fmtDateInput(val('prodDate'));
-  row['เลขที่ใบสั่งผลิต'] = val('prodOrder');
-  row['เลขที่ใบสั่งขาย']  = val('soNo');
-  row['เครื่องจักร']      = val('machine');
-  row['วันที่สั่งผลิต']    = fmtDateInput(val('orderDate'));
-  row['วันที่ส่งสินค้า']  = fmtDateInput(val('shipDate'));
-  row['รหัสสินค้า']       = val('productCode');
-  row['ขนาด']             = val('size');
-  row['ลูกค้า']           = val('customer');
-  row['กะ']               = val('shift');
-  row['หัวหน้ากะ']        = val('supervisor');
-  row['ผู้บันทึก']        = val('recorder');
-
-  if (t === 'production' || t === 'defect') {
-    row['เวลาเริ่ม']  = val('startTime');
-    row['เวลาจบ']     = val('endTime');
-    row['จำนวนที่สั่งผลิต (kg)']  = val('orderKg');
-    row['จำนวนที่สั่งผลิต (ม้วน)']= val('orderRoll');
-    row['จำนวนที่ผลิตได้ (kg)']   = val('prodKg');
-    row['จำนวนที่ผลิตได้ (ม้วน)'] = val('prodRoll');
-    row['เลขที่ม้วน A'] = val('rollA');
-    row['เลขที่ม้วน B'] = val('rollB');
-    row['ยอดผลิตคงเหลือ (kg)']   = val('remainKg');
-    row['ยอดผลิตคงเหลือ (ม้วน)'] = val('remainRoll');
-  }
-  if (t === 'defect') {
-    row['กลุ่มของเสีย']           = val('defectGroup');
-    row['น้ำหนักเศษของเสีย (kg)'] = val('wasteKg');
-    row['น้ำหนักเศษก้อน (kg)']    = val('lumpKg');
-    row['น้ำหนักม้วนรอแก้ไข (kg)']= val('reworkKg');
-    row['จำนวนม้วนรอแก้ไข (ม้วน)']= val('reworkRoll');
-    row['อาการของปัญหา'] = val('symptom');
-    row['สาเหตุ']        = val('cause');
-  }
-  if (t === 'downtime') {
-    row['เวลาที่เริ่มสูญเสีย'] = val('lossStart');
-    row['เวลาที่จบการสูญเสีย'] = val('lossEnd');
-    row['ระบุปัญหาเครื่องจักร'] = val('machProblem');
-    row['อาการของปัญหา']       = val('symptom2');
-    row['สาเหตุ']              = val('cause2');
-    row['การดำเนินการ']        = val('action');
-  }
-  row._type = t;
-  row._synced = false;
-  pending.push(row);
-  lastRow = row;
-  renderPending();
-  // Clear only "per-event" fields, keep header common ones for speed
-  clearEventFields();
-
-  // Auto-sync to Supabase if configured
-  if (useSupabase) {
-    syncRowToSupabase(row).then(res => {
-      if (res.ok && !res.skipped) {
-        row._synced = true;
-        renderPending();
-        toToast('เพิ่มแถวและบันทึกขึ้น Supabase ✓');
-      } else if (!res.ok) {
-        toToast('แถวบันทึกในเครื่อง แต่ Supabase: ' + res.error, true);
-      }
-    });
-  } else {
-    toToast('เพิ่มแถวเรียบร้อย ✓');
+function editProfile(){
+  g('secLog').style.display='none';
+  g('secProfile').style.display='block';
+  if(profile){
+    g('p_order').value=profile.order_no||'';g('p_so').value=profile.so||'';
+    g('p_code').value=profile.code||'';g('p_size').value=profile.size||'';
+    g('p_customer').value=profile.customer||'';g('p_planned_kg').value=profile.planned_kg||'';
   }
 }
 
-async function syncAllPending() {
-  if (!useSupabase) { toToast('ยังไม่ได้ตั้งค่า Supabase', true); return; }
-  if (!await ensureLogin()) return;
-  let ok = 0, fail = 0;
-  for (const r of pending) {
-    if (r._synced) continue;
-    const res = await syncRowToSupabase(r);
-    if (res.ok) { r._synced = true; ok++; } else fail++;
-  }
-  renderPending();
-  toToast(`Sync เสร็จ: สำเร็จ ${ok}, ล้มเหลว ${fail}`, fail > 0);
+function loadLastProfile(){
+  try{
+    const s=localStorage.getItem('lastProfile');
+    if(!s){toast('ไม่มี order ล่าสุด','terr');return;}
+    const p=JSON.parse(s);
+    g('p_order').value=p.order_no||'';g('p_so').value=p.so||'';
+    g('p_code').value=p.code||'';g('p_size').value=p.size||'';
+    g('p_customer').value=p.customer||'';g('p_planned_kg').value=p.planned_kg||'';
+    toast('โหลด order ล่าสุดแล้ว','tinfo');
+  }catch(e){}
 }
 
-function clearEventFields() {
-  ['startTime','endTime','orderKg','orderRoll','prodKg','prodRoll','rollA','rollB','remainKg','remainRoll',
-   'defectGroup','wasteKg','lumpKg','reworkKg','reworkRoll','symptom','cause',
-   'lossStart','lossEnd','machProblem','symptom2','cause2','action'].forEach(id => $(id).value = '');
-  updateLiveSummary();
-}
-
-function clearForm() {
-  document.querySelectorAll('input, select, textarea').forEach(el => {
-    if (el.type === 'radio') return;
-    el.value = '';
+// ── Type ─────────────────────────────────────────────────────────────────────
+function setType(t){
+  curType=t;
+  document.querySelectorAll('.type-pill').forEach(p=>{
+    p.className='type-pill';
+    if(p.dataset.t===t) p.classList.add(t==='production'?'ap':t==='defect'?'ad':'aw');
   });
-  $('prodDate').value = new Date().toISOString().slice(0,10);
-  updateLiveSummary();
-  toToast('ล้างฟอร์มแล้ว');
+  g('secProd').style.display=t==='production'?'block':'none';
+  g('secDefect').style.display=t==='defect'?'block':'none';
+  g('secDown').style.display=t==='downtime'?'block':'none';
 }
 
-function useLast() {
-  if (!lastRow) { toToast('ยังไม่มีแถวก่อนหน้า', true); return; }
-  // Copy common header values from last row back to form
-  const map = {
-    'วันที่ผลิต':'prodDate','เลขที่ใบสั่งผลิต':'prodOrder','เลขที่ใบสั่งขาย':'soNo',
-    'เครื่องจักร':'machine','รหัสสินค้า':'productCode','ขนาด':'size','ลูกค้า':'customer',
-    'กะ':'shift','หัวหน้ากะ':'supervisor','ผู้บันทึก':'recorder'
+// ── Live calc ─────────────────────────────────────────────────────────────────
+function liveSummary(){
+  const fg=n('s_fg_kg'),sc=n('s_scrap'),rw=n('s_rework');
+  const bar=g('sumBar');
+  if(fg>0){
+    bar.style.display='flex';
+    g('sPct').textContent=(sc/(fg+sc)*100).toFixed(2)+'%';
+    g('rPct').textContent=(rw/fg*100).toFixed(2)+'%';
+  }else bar.style.display='none';
+}
+function calcDown(){
+  const ls=v('s_lstart'),le=v('s_lend');
+  if(!ls||!le){g('downSum').textContent='';return;}
+  const[sh,sm]=ls.split(':').map(Number),[eh,em]=le.split(':').map(Number);
+  let d=(eh*60+em)-(sh*60+sm);if(d<0)d+=1440;
+  g('downSum').textContent='⏱ Downtime: '+d+' นาที ('+((d/60).toFixed(1))+' ชม.)';
+}
+
+// ── Add row ───────────────────────────────────────────────────────────────────
+function addRow(){
+  const req=['s_date','s_shift','s_machine','s_supervisor'];
+  if(curType==='production')req.push('s_start','s_end','s_fg_kg','s_fg_rolls');
+  if(curType==='downtime')req.push('s_lstart','s_lend');
+  let bad=false;
+  req.forEach(id=>{g(id).classList.remove('err');if(!v(id)){g(id).classList.add('err');bad=true;}});
+  if(bad){toast('กรอกช่องที่จำเป็น (*)','terr');return;}
+
+  const row={
+    _type:curType,_synced:false,
+    order_no:profile.order_no,so:profile.so,code:profile.code,
+    size:profile.size,customer:profile.customer,planned_kg:profile.planned_kg||null,
+    date:v('s_date'),shift:v('s_shift'),machine:v('s_machine'),
+    supervisor:v('s_supervisor'),recorder:v('s_recorder'),
+    start:v('s_start')||null,end:v('s_end')||null,
+    fg_kg:curType==='production'?n('s_fg_kg')||null:null,
+    fg_rolls:curType==='production'?n('s_fg_rolls')||null:null,
+    scrap_kg:curType==='production'?n('s_scrap')||null:n('s_waste')||null,
+    rework_kg:curType==='production'?n('s_rework')||null:n('s_rework2')||null,
+    rework_rolls:n('s_rework_rolls')||null,
+    wip_kg:n('s_wip')||null,
+    symptom:v('s_symptom')||null,cause:v('s_cause')||null,
+    lstart:v('s_lstart')||null,lend:v('s_lend')||null,
+    problem:v('s_problem')||null,note:v('s_note')||null,
   };
-  // วันที่ผลิต comes as d/m/yyyy; convert back to yyyy-mm-dd
-  const [d,m,y] = (lastRow['วันที่ผลิต']||'').split('/');
-  if (d && m && y) $('prodDate').value = `${y}-${m.padStart(2,'0')}-${d.padStart(2,'0')}`;
-  Object.keys(map).forEach(k => {
-    if (k === 'วันที่ผลิต') return;
-    if ($(map[k])) $(map[k]).value = lastRow[k] || '';
-  });
-  toToast('คัดลอกข้อมูลหัวจากแถวล่าสุด');
+
+  pending.push(row);lastShift=row;
+  try{localStorage.setItem('pendingRows',JSON.stringify(pending));}catch(e){}
+  renderPending();clearShift();
+  toast('บันทึกกะเรียบร้อย ✓');
+  syncRow(row);
 }
 
-function delRow(i) {
-  if (!confirm('ลบแถวนี้?')) return;
-  pending.splice(i, 1);
+async function syncRow(row){
+  const{error}=await sb.from('production_log').insert({
+    row_type:row._type,
+    production_date:row.date||null,
+    start_time:row.start,end_time:row.end,
+    production_order_no:row.order_no,sales_order_no:row.so,
+    machine:row.machine,product_code:row.code,product_size:row.size,customer:row.customer,
+    ordered_qty_kg:row.planned_kg?Number(row.planned_kg):null,
+    produced_qty_kg:row.fg_kg,produced_qty_rolls:row.fg_rolls,
+    waste_kg:row.scrap_kg,rework_kg:row.rework_kg,rework_rolls:row.rework_rolls,
+    remaining_qty_kg:row.wip_kg,
+    shift:row.shift,supervisor:row.supervisor,recorder:row.recorder,
+    problem_symptom:row.symptom,problem_cause:row.cause,
+    loss_start_time:row.lstart,loss_end_time:row.lend,
+    machine_problem:row.problem,
+  });
+  if(!error){row._synced=true;renderPending();}
+  else console.error('Sync:',error.message);
+}
+
+function clearShift(){
+  ['s_start','s_end','s_fg_kg','s_fg_rolls','s_scrap','s_rework','s_wip','s_rework_rolls',
+   's_symptom','s_cause','s_waste','s_rework2','s_lstart','s_lend','s_problem','s_note']
+   .forEach(id=>{const e=g(id);if(e){e.value='';e.classList.remove('err');}});
+  g('sumBar').style.display='none';g('downSum').textContent='';
+}
+
+function useLast(){
+  if(!lastShift){toast('ยังไม่มีกะก่อนหน้า','terr');return;}
+  g('s_date').value=lastShift.date||'';
+  g('s_shift').value=lastShift.shift||'';
+  g('s_machine').value=lastShift.machine||'';
+  g('s_supervisor').value=lastShift.supervisor||'';
+  g('s_recorder').value=lastShift.recorder||'';
+  toast('คัดลอกกะล่าสุดแล้ว','tinfo');
+}
+
+function delRow(i){
+  if(!confirm('ลบแถวนี้?'))return;
+  pending.splice(i,1);
+  try{localStorage.setItem('pendingRows',JSON.stringify(pending));}catch(e){}
   renderPending();
 }
 
-function renderPending() {
-  const tb = $('pendingBody');
-  if (pending.length === 0) {
-    tb.innerHTML = '<tr><td colspan="11" class="empty">ยังไม่มีรายการ</td></tr>';
-  } else {
-    tb.innerHTML = pending.map((r, i) => {
-      const typeBadge = r._type === 'production' ? '<span class="badge badge-prod">การผลิต</span>'
-                  : r._type === 'defect' ? '<span class="badge badge-defect">ของเสีย</span>'
-                  : '<span class="badge badge-down">Downtime</span>';
-      const syncBadge = useSupabase ? (r._synced
-        ? '<span class="badge" style="background:#dcfce7;color:#15803d;">☁ synced</span>'
-        : '<span class="badge" style="background:#fef3c7;color:#a16207;">⏳ local</span>') : '';
-      const badge = typeBadge + ' ' + syncBadge;
-      const ds = minutesBetween(r['เวลาที่เริ่มสูญเสีย'], r['เวลาที่จบการสูญเสีย']);
-      return `<tr>
-        <td>${i+1}</td>
-        <td>${badge}</td>
-        <td>${r['วันที่ผลิต']||''}</td>
-        <td>${r['กะ']||''}</td>
-        <td>${r['เครื่องจักร']||''}</td>
-        <td>${r['เลขที่ใบสั่งผลิต']||''}</td>
-        <td>${r['ลูกค้า']||''}</td>
-        <td>${r['จำนวนที่ผลิตได้ (kg)']||''}</td>
-        <td>${((parseFloat(r['น้ำหนักเศษของเสีย (kg)'])||0)+(parseFloat(r['น้ำหนักเศษก้อน (kg)'])||0)).toFixed(2)}</td>
-        <td>${ds!==null ? ds+' นาที' : ''}</td>
-        <td><button class="btn-ghost" style="padding: 4px 10px; font-size: 12px;" onclick="delRow(${i})">ลบ</button></td>
-      </tr>`;
-    }).join('');
-  }
-  $('pendingCount').textContent = pending.length;
-  $('footerCount').textContent = pending.length;
-  const kgSum = pending.reduce((a,r) => a + (parseFloat(r['จำนวนที่ผลิตได้ (kg)'])||0), 0);
-  const wSum  = pending.reduce((a,r) => a + (parseFloat(r['น้ำหนักเศษของเสีย (kg)'])||0) + (parseFloat(r['น้ำหนักเศษก้อน (kg)'])||0), 0);
-  $('footerKg').textContent = kgSum.toLocaleString(undefined,{maximumFractionDigits:2});
-  $('footerWaste').textContent = wSum.toLocaleString(undefined,{maximumFractionDigits:2});
-  // Persist to localStorage so a power blip doesn't lose entries
-  try { localStorage.setItem('pendingRows', JSON.stringify(pending)); } catch(e) {}
+// ── Render ────────────────────────────────────────────────────────────────────
+function renderPending(){
+  const fg=pending.reduce((s,r)=>s+(r.fg_kg||0),0);
+  const sc=pending.reduce((s,r)=>s+(r.scrap_kg||0),0);
+  const rw=pending.reduce((s,r)=>s+(r.rework_kg||0),0);
+  g('kFG').textContent=fmt(fg);g('kScrap').textContent=fmt(sc);g('kRework').textContent=fmt(rw);
+  g('footerCount').textContent=pending.length+' แถว';
+  g('fFG').textContent=fmt(fg);g('fScrap').textContent=fmt(sc);
+  g('rowLbl').textContent='('+pending.length+' แถว)';
+  const tb=g('pendingBody');
+  if(!pending.length){tb.innerHTML='<tr><td colspan="10" style="text-align:center;color:#94a3b8;padding:20px;">ยังไม่มีรายการ</td></tr>';return;}
+  tb.innerHTML=pending.map((r,i)=>{
+    const tb2=r._type==='production'?'<span class="badge b-prod">ผลิต</span>':
+              r._type==='defect'?'<span class="badge b-defect">เสีย/ซ่อม</span>':'<span class="badge b-down">Downtime</span>';
+    const sy=r._synced?'<span class="badge b-sync">☁</span>':'<span class="badge b-local">⏳</span>';
+    return `<tr>
+      <td>${i+1}</td><td>${tb2} ${sy}</td>
+      <td>${r.date||'-'}</td><td>${r.shift||'-'}</td>
+      <td style="font-weight:600;">${r.machine||'-'}</td>
+      <td style="color:#1f4e78;font-weight:500;">${r.fg_kg?fmt(r.fg_kg):'-'}</td>
+      <td style="color:#dc2626;">${r.scrap_kg?fmt(r.scrap_kg):'-'}</td>
+      <td style="color:#ea580c;">${r.rework_kg?fmt(r.rework_kg):'-'}</td>
+      <td style="color:#64748b;font-size:12px;">${r.symptom||r.problem||'-'}</td>
+      <td><button class="btn btn-ghost btn-sm" onclick="delRow(${i})">ลบ</button></td>
+    </tr>`;
+  }).join('');
 }
 
-// Show cloud status + reveal Sync button if Supabase is configured
-(function initCloudStatus() {
-  const el = document.getElementById('cloudStatus');
-  if (useSupabase) {
-    el.innerHTML = '☁️ <span style="color:#a7f3d0;">Supabase: เชื่อมต่อ</span>';
-    document.getElementById('syncBtn').style.display = '';
-  } else {
-    el.innerHTML = '📁 <span style="opacity:.8;">โหมด CSV (offline)</span>';
-  }
-})();
-
-// Restore on load
-(function restore() {
-  try {
-    const s = localStorage.getItem('pendingRows');
-    if (s) {
-      pending = JSON.parse(s) || [];
-      if (pending.length) {
-        lastRow = pending[pending.length-1];
-        renderPending();
-        toToast(`กู้คืน ${pending.length} แถวจากการบันทึกครั้งก่อน`);
-      }
-    }
-  } catch(e) {}
-})();
-
-// ===== CSV export =====
-function rowToCSVCells(r) {
-  return COLUMNS.map(c => {
-    let v = r[c] === undefined ? '' : String(r[c]);
-    if (v.includes(',') || v.includes('"') || v.includes('\n')) {
-      v = '"' + v.replace(/"/g, '""') + '"';
-    }
-    return v;
+// ── CSV ───────────────────────────────────────────────────────────────────────
+const COLS=['วันที่ผลิต','กะ','เครื่องจักร','ใบสั่งผลิต','ใบสั่งขาย','รหัสสินค้า','ขนาด','ลูกค้า',
+  'เวลาเริ่ม','เวลาจบ','FG (kg)','FG (ม้วน)','ของเสีย (kg)','ซ่อม (kg)','ยอดคงเหลือ (kg)',
+  'อาการ','สาเหตุ','หัวหน้ากะ','ผู้บันทึก','ประเภท'];
+function buildCSV(){
+  const lines=[COLS.join(',')];
+  pending.forEach(r=>{
+    const c=[r.date,r.shift,r.machine,r.order_no,r.so,r.code,r.size,r.customer,
+      r.start,r.end,r.fg_kg,r.fg_rolls,r.scrap_kg,r.rework_kg,r.wip_kg,
+      r.symptom||r.problem,r.cause,r.supervisor,r.recorder,r._type]
+      .map(x=>{const s=String(x??'');return s.includes(',')||s.includes('"')?'"'+s.replace(/"/g,'""')+'"':s;});
+    lines.push(c.join(','));
   });
+  return '﻿'+lines.join('\r\n');
 }
-function buildCSV() {
-  const lines = [];
-  lines.push(COLUMNS.join(','));
-  pending.forEach(r => lines.push(rowToCSVCells(r).join(',')));
-  return '﻿' + lines.join('\r\n');  // UTF-8 BOM + Windows newlines for Excel
+function previewCSV(){if(!pending.length){toast('ยังไม่มีข้อมูล','terr');return;}g('csvPre').textContent=buildCSV();g('csvOverlay').classList.add('show');}
+function closeCSV(){g('csvOverlay').classList.remove('show');}
+function downloadCSV(){
+  if(!pending.length){toast('ยังไม่มีข้อมูล','terr');return;}
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([buildCSV()],{type:'text/csv;charset=utf-8;'}));
+  a.download='production_'+new Date().toISOString().slice(0,10)+'.csv';
+  a.click();toast('ดาวน์โหลดแล้ว ✓');closeCSV();
 }
-function previewCSV() {
-  if (pending.length === 0) { toToast('ยังไม่มีข้อมูลใน Export', true); return; }
-  $('csvPreview').textContent = buildCSV();
-  $('modal').classList.add('show');
+function clearAll(){
+  if(!pending.length)return;
+  if(!confirm('ลบรายการทั้งหมด '+pending.length+' แถว?'))return;
+  pending=[];try{localStorage.removeItem('pendingRows');}catch(e){}
+  renderPending();toast('ล้างแล้ว');
 }
-function closeModal() { $('modal').classList.remove('show'); }
-function downloadCSV() {
-  if (pending.length === 0) { toToast('ยังไม่มีข้อมูลใน Export', true); return; }
-  const blob = new Blob([buildCSV()], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  const now = new Date();
-  const stamp = now.toISOString().slice(0,10).replace(/-/g,'') + '_' + now.toTimeString().slice(0,5).replace(':','');
-  a.href = url;
-  a.download = `production_${stamp}.csv`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-  toToast('ดาวน์โหลด CSV เรียบร้อย ✓');
-  closeModal();
-}
-function clearAll() {
-  if (pending.length === 0) return;
-  if (!confirm(`ลบรายการที่บันทึกทั้ง ${pending.length} แถว?`)) return;
-  pending = [];
-  lastRow = null;
-  try { localStorage.removeItem('pendingRows'); } catch(e) {}
-  renderPending();
-  toToast('ล้างรายการทั้งหมดแล้ว');
-}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+g('s_date').value=new Date().toISOString().slice(0,10);
+try{const s=localStorage.getItem('pendingRows');if(s)pending=JSON.parse(s)||[];}catch(e){}
+try{const s=localStorage.getItem('lastProfile');if(s){const p=JSON.parse(s);g('p_order').value=p.order_no||'';g('p_so').value=p.so||'';g('p_code').value=p.code||'';g('p_size').value=p.size||'';g('p_customer').value=p.customer||'';g('p_planned_kg').value=p.planned_kg||'';}}catch(e){}
+renderPending();
 </script>
 </body>
 </html>
